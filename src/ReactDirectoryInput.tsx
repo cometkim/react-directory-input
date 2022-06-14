@@ -24,7 +24,11 @@ export type ReactDirectoryInputAfterArchivingProgressCallback = (props: {
 
 export type ReactDirectoryInputArchivingResultCallback = (props: {
   result: File,
-  files: File[],
+  procceed: File[],
+}) => void;
+
+export type ReactDirectoryInputArchivingErrorCallback = (props: {
+  error: unknown,
 }) => void;
 
 export type ReactDirectoryInputProps = {
@@ -42,6 +46,7 @@ export type ReactDirectoryInputProps = {
   onBeforeArchivingProgress?: ReactDirectoryInputBeforeArchivingProgressCallback,
   onAfterArchivingProgress?: ReactDirectoryInputAfterArchivingProgressCallback,
   onArchivingResult?: ReactDirectoryInputArchivingResultCallback,
+  onArchivingError?: ReactDirectoryInputArchivingErrorCallback,
 };
 
 const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirectoryInputProps> = ({
@@ -54,6 +59,7 @@ const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirector
   onBeforeArchivingProgress,
   onAfterArchivingProgress,
   onArchivingResult,
+  onArchivingError,
   ...otherProps
 }, forwardedRef) => {
   const localRef = React.useRef<HTMLInputElement>(null);
@@ -82,38 +88,46 @@ const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirector
             const [firstFile] = fileList;
             const [baseDirectoryName] = firstFile.webkitRelativePath.split('/');
 
-            const archiver = getArchiver({ baseDirectoryName });
-            onArchivingStart?.({ files });
+            try {
+              const archiver = getArchiver({ baseDirectoryName });
+              onArchivingStart?.({ files });
 
-            let remaning = files.slice();
-            const procceed = new ReactDirectoryInputFileList();
-            for (const file of files) {
-              if (
-                onBeforeArchivingProgress == null ||
-                onBeforeArchivingProgress({
-                  file,
-                  files,
-                  procceed,
-                  remaning,
-                })
-              ) {
-                await archiver.addFileEntry(file);
-                procceed.push(file);
-                remaning = remaning.filter(procceed => procceed === file);
+              let remaning = files.slice();
+              const procceed: File[] = [];
+              for (const file of files) {
+                if (
+                  onBeforeArchivingProgress == null ||
+                  onBeforeArchivingProgress({
+                    file,
+                    files,
+                    procceed,
+                    remaning,
+                  })
+                ) {
+                  await archiver.addFileEntry(file);
+                  procceed.push(file);
+                  remaning = remaning.filter(procceed => procceed === file);
 
-                onAfterArchivingProgress?.({
-                  file,
-                  files,
-                  procceed,
-                  remaning,
-                });
+                  onAfterArchivingProgress?.({
+                    file,
+                    files,
+                    procceed,
+                    remaning,
+                  });
+                }
               }
-            }
 
-            const result = await archiver.getResult();
-            localElement.value = `C:\\fakepath\\${result.name}`;
-            localElement.files = new ReactDirectoryInputFileList(result);
-            onArchivingResult?.({ files: procceed, result });
+              const result = await archiver.getResult();
+              localElement.value = `C:\\fakepath\\${result.name}`;
+
+              const transfer = new DataTransfer();
+              transfer.items.add(result);
+              localElement.files = transfer.files;
+              onArchivingResult?.({ procceed, result });
+
+            } catch (error: unknown) {
+              onArchivingError?.({ error });
+            }
           } else {
             localElement.value = "";
           }
@@ -139,10 +153,3 @@ const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirector
 
 ReactDirectoryInput.displayName = 'ReactDirectoryInput';
 export default React.forwardRef(ReactDirectoryInput);
-
-// Note: FileList is read-only, and no way to construct in the user code.
-class ReactDirectoryInputFileList extends Array<File> implements FileList {
-  item(index: number) {
-    return this[index] || null;
-  }
-}
