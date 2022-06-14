@@ -135,7 +135,8 @@ const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirector
         }}
       />
       <input
-        type="hidden"
+        type="file"
+        style={{ display: 'none' }}
         ref={mergeRefs([localRef, forwardedRef])}
         id={id}
         name={name}
