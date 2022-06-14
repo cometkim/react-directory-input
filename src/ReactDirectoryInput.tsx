@@ -63,7 +63,11 @@ const ReactDirectoryInput: IntrinsicElementWrapperFuntion<'input', ReactDirector
         {...otherProps}
         type="file"
         // @ts-ignore
-        webkitdirectory
+        directory=""
+        // @ts-ignore
+        mozdirectory=""
+        // @ts-ignore
+        webkitdirectory=""
         multiple
         onChange={async e => {
           const localElement = localRef.current;

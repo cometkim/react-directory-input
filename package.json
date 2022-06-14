@@ -1,6 +1,6 @@
 {
   "name": "react-directory-input",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple component to handle a directory as a single file",
   "type": "module",
   "license": "MIT",
