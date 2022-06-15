@@ -15,7 +15,7 @@ function DirectoryUpload() {
     <ReactDirectoryZipInput
       onArchivingStart={() => {
         setIsProcessing(true);
-      })
+      }}
       onArchivingResult={({ result }) => {
         setUpload(result);
         setIsProcessing(false);
